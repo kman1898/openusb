@@ -1,0 +1,10 @@
+pub mod api;
+pub mod auth;
+pub mod auto_connect;
+pub mod config;
+pub mod connection;
+pub mod discovery;
+pub mod events;
+pub mod reconnect;
+pub mod tls;
+pub mod usbip;

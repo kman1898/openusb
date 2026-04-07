@@ -1,0 +1,27 @@
+[Unit]
+Description=OpenUSB Server Daemon
+Documentation=https://github.com/kman1898/usb-passthrough
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/openusbd --config /etc/openusb/openusb.toml
+Restart=on-failure
+RestartSec=5
+User=root
+Group=root
+
+# Security hardening
+NoNewPrivileges=no
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/openusb /var/lib/openusb /etc/openusb
+PrivateTmp=true
+
+# USB access requires these
+DeviceAllow=/dev/bus/usb/* rw
+SupplementaryGroups=plugdev
+
+[Install]
+WantedBy=multi-user.target

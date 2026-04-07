@@ -1,0 +1,43 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (web dashboard)
+web-dashboard/node_modules/
+web-dashboard/dist/
+
+# Secrets / local config
+*.pem
+*.key
+*.p12
+openusb.toml
+!server/config/openusb.toml.example
+
+# Logs
+*.log
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Build artifacts
+*.exe
+*.msi
+*.deb
+*.rpm
+*.pkg
+*.dmg
+*.AppImage

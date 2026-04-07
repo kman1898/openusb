@@ -1,0 +1,67 @@
+[server]
+name = "My OpenUSB Server"
+port = 3240                          # USB/IP data port
+api_port = 8443                      # REST API + Dashboard
+# hostname = "openusb-server"        # Optional mDNS hostname override
+
+[discovery]
+enabled = true                       # Broadcast via mDNS
+mdns_name = "_openusb._tcp"
+
+[security]
+mode = "open"                        # open | password | certificate
+# password_hash = ""                 # Set via: openusbd set-password
+tls_enabled = false
+# tls_cert = "/etc/openusb/server.pem"
+# tls_key = "/etc/openusb/server.key"
+# tls_ca = "/etc/openusb/ca.pem"
+# tls_client_certs = false
+
+[devices]
+auto_share = true                    # Share all USB devices by default
+ignore_vendor_ids = ["1d6b"]         # Linux Foundation (internal hubs)
+# ignore_bus_ids = []
+# allow_vendor_ids = []              # If set, ONLY share these vendors
+
+[devices.nicknames]
+# "0765:5020" = "C6 Colorimeter"
+# "04b8:0005" = "Epson Printer"
+
+# [devices.access]
+# "0765:5020" = { allowed_users = ["john", "admin"], require_password = false }
+
+[events]
+# on_attach = "/etc/openusb/scripts/on_attach.sh"
+# on_detach = ""
+# on_client_connect = ""
+# on_client_disconnect = ""
+
+[notifications]
+# webhook_url = "https://hooks.slack.com/..."
+# email_smtp = "smtp://..."
+# email_to = "admin@example.com"
+
+[scheduling]
+enabled = false
+timezone = "America/New_York"
+
+[metrics]
+enabled = true
+history_days = 90
+bandwidth_tracking = true
+
+[reverse_connections]
+enabled = false
+# clients = ["192.168.1.100:7573"]
+retry_interval = 15
+
+[relay]
+enabled = false
+# relay_server = "https://relay.example.com"
+# relay_token = ""
+
+[logging]
+level = "info"
+file = "/var/log/openusb/openusb.log"
+max_size_mb = 50
+rotate_count = 5

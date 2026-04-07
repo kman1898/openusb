@@ -1,0 +1,17 @@
+[package]
+name = "openusb-client-common"
+description = "Shared client library for OpenUSB — discovery, connection, auto-connect logic"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+openusb-shared = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+mdns-sd = { workspace = true }
+toml = { workspace = true }

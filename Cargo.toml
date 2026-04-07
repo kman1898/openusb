@@ -1,0 +1,64 @@
+[workspace]
+resolver = "2"
+members = [
+    "server/openusbd",
+    "shared",
+    "client/common",
+    "cli",
+    # "client/windows",   # Phase 2
+    # "client/linux",     # Phase 3
+    # "client/macos",     # Phase 3
+    # "relay",            # Phase 5
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/kman1898/usb-passthrough"
+rust-version = "1.85"
+
+[workspace.dependencies]
+# Shared across crates
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+thiserror = "2"
+anyhow = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Config
+toml = "0.8"
+
+# Networking
+axum = { version = "0.8", features = ["ws"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+reqwest = { version = "0.12", features = ["json"] }
+
+# mDNS
+mdns-sd = "0.12"
+
+# TLS
+rustls = "0.23"
+tokio-rustls = "0.26"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Auth
+argon2 = "0.5"
+jsonwebtoken = "9"
+
+# USB (Linux)
+# nix = { version = "0.29", features = ["net", "ioctl"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Shared library
+openusb-shared = { path = "shared" }
+openusb-client-common = { path = "client/common" }
