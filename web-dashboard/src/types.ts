@@ -48,5 +48,17 @@ export type ServerEvent =
 export interface ClientStatus {
   installed: boolean;
   version?: string;
-  driver_status?: string;
+  driver_status?: DriverStatus;
+}
+
+export type DriverStatus =
+  | { status: "installed"; version: string }
+  | { status: "not_installed" }
+  | { status: "error"; message: string };
+
+export interface AutoUseRule {
+  type: "device" | "vendor_id" | "server" | "all";
+  vendor_id?: string;
+  product_id?: string;
+  server?: string;
 }

@@ -6,6 +6,14 @@ interface Props {
 
 export function ClientBanner({ client }: Props) {
   if (client.installed) {
+    const driverText = client.driver_status
+      ? client.driver_status.status === "installed"
+        ? `Driver: ${client.driver_status.version}`
+        : client.driver_status.status === "not_installed"
+          ? "Driver: missing"
+          : "Driver: error"
+      : null;
+
     return (
       <div
         style={{
@@ -15,16 +23,16 @@ export function ClientBanner({ client }: Props) {
           border: "1px solid #166534",
           display: "flex",
           alignItems: "center",
-          gap: 8,
+          gap: 12,
           fontSize: 13,
         }}
       >
-        <span style={{ color: "#22c55e" }}>Client connected</span>
+        <span style={{ color: "#22c55e", fontWeight: 500 }}>Client connected</span>
         {client.version && (
           <span style={{ color: "#86efac" }}>v{client.version}</span>
         )}
-        {client.driver_status && (
-          <span style={{ color: "#86efac" }}>Driver: {client.driver_status}</span>
+        {driverText && (
+          <span style={{ color: "#86efac" }}>{driverText}</span>
         )}
       </div>
     );

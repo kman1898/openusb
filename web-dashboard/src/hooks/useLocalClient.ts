@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { ClientStatus } from "../types";
+import type { ClientStatus, AutoUseRule } from "../types";
 
 const CLIENT_API = "http://localhost:9245/api";
 
@@ -10,7 +10,11 @@ export function useLocalClient() {
     try {
       const res = await fetch(`${CLIENT_API}/status`, { signal: AbortSignal.timeout(2000) });
       const data = await res.json();
-      setClient({ installed: true, version: data.version, driver_status: data.driver_status });
+      setClient({
+        installed: true,
+        version: data.version,
+        driver_status: data.driver_status,
+      });
     } catch {
       setClient({ installed: false });
     }
@@ -40,5 +44,25 @@ export function useLocalClient() {
     if (!res.ok) throw new Error("Detach failed");
   };
 
-  return { client, attach, detach, detect };
+  const getAutoUseRules = async (): Promise<AutoUseRule[]> => {
+    const res = await fetch(`${CLIENT_API}/auto-use`);
+    if (!res.ok) return [];
+    return res.json();
+  };
+
+  const addAutoUseRule = async (rule: AutoUseRule) => {
+    const res = await fetch(`${CLIENT_API}/auto-use`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rule),
+    });
+    if (!res.ok) throw new Error("Failed to add auto-use rule");
+  };
+
+  const installDriver = async () => {
+    const res = await fetch(`${CLIENT_API}/driver/install`, { method: "POST" });
+    if (!res.ok) throw new Error("Driver install failed");
+  };
+
+  return { client, attach, detach, detect, getAutoUseRules, addAutoUseRule, installDriver };
 }

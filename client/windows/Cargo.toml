@@ -1,0 +1,26 @@
+[package]
+name = "openusb-client-windows"
+description = "OpenUSB Windows thin client — background service with system tray and local API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "openusb-client"
+path = "src/main.rs"
+
+[dependencies]
+openusb-shared = { workspace = true }
+openusb-client-common = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+] }

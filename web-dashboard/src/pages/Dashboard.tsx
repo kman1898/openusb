@@ -5,10 +5,12 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import { useLocalClient } from "../hooks/useLocalClient";
 import { DeviceCard } from "../components/DeviceCard";
 import { ClientBanner } from "../components/ClientBanner";
+import { AutoUseConfig } from "../components/AutoUseConfig";
+import { DriverStatus } from "../components/DriverStatus";
 
 export function Dashboard() {
   const api = useApi();
-  const { client, attach, detach } = useLocalClient();
+  const { client, attach, detach, getAutoUseRules, addAutoUseRule, installDriver } = useLocalClient();
   const [devices, setDevices] = useState<Map<string, UsbDevice>>(new Map());
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +126,10 @@ export function Dashboard() {
         <ClientBanner client={client} />
       </div>
 
+      {client.installed && client.driver_status && client.driver_status.status !== "installed" && (
+        <DriverStatus driver={client.driver_status} onInstall={installDriver} />
+      )}
+
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <StatCard label="Devices" value={deviceList.length} />
         <StatCard label="Shared" value={sharedCount} />
@@ -157,6 +163,12 @@ export function Dashboard() {
           ))}
         </div>
       )}
+
+      <AutoUseConfig
+        clientInstalled={client.installed}
+        getRules={getAutoUseRules}
+        addRule={addAutoUseRule}
+      />
     </div>
   );
 }
