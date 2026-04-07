@@ -29,3 +29,5 @@ rusqlite = { workspace = true }
 argon2 = { workspace = true }
 jsonwebtoken = { workspace = true }
 clap = { workspace = true }
+async-trait = { workspace = true }
+gethostname = { workspace = true }

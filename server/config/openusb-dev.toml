@@ -1,0 +1,19 @@
+[server]
+name = "OpenUSB Dev Server"
+port = 3240
+api_port = 8443
+
+[discovery]
+enabled = false
+
+[devices]
+auto_share = true
+ignore_vendor_ids = ["1d6b"]
+
+[devices.nicknames]
+"046d:c52b" = "Logitech Receiver"
+"0765:5020" = "i1Display Pro"
+
+[logging]
+level = "debug"
+file = "/tmp/openusb-dev.log"

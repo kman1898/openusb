@@ -53,6 +53,12 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 argon2 = "0.5"
 jsonwebtoken = "9"
 
+# Async trait (for dyn dispatch of async traits)
+async-trait = "0.1"
+
+# Hostname detection
+gethostname = "1"
+
 # USB (Linux)
 # nix = { version = "0.29", features = ["net", "ioctl"] }
 
