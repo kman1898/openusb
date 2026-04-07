@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.openusb.client</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/openusb-client</string>
+        <string>--headless</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/openusb-client.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/openusb-client.err</string>
+</dict>
+</plist>
