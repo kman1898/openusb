@@ -75,7 +75,7 @@ fn load_usb_ids() -> Option<UsbIdDatabase> {
     for path in &paths {
         if let Ok(contents) = std::fs::read_to_string(path) {
             tracing::info!(path, "Loaded USB ID database");
-            return Some(UsbIdDatabase::from_str(&contents));
+            return Some(UsbIdDatabase::parse(&contents));
         }
     }
 

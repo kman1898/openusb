@@ -13,7 +13,7 @@ struct Vendor {
 
 impl UsbIdDatabase {
     /// Parse a usb.ids file from its contents.
-    pub fn from_str(contents: &str) -> Self {
+    pub fn parse(contents: &str) -> Self {
         let mut vendors = HashMap::new();
         let mut current_vendor: Option<(u16, Vendor)> = None;
 
@@ -26,13 +26,11 @@ impl UsbIdDatabase {
             // Product line (starts with a tab)
             if line.starts_with('\t') && !line.starts_with("\t\t") {
                 let trimmed = line.trim();
-                if let Some((id_str, name)) = trimmed.split_once("  ") {
-                    if let Ok(id) = u16::from_str_radix(id_str.trim(), 16) {
-                        if let Some((_, ref mut vendor)) = current_vendor {
+                if let Some((id_str, name)) = trimmed.split_once("  ")
+                    && let Ok(id) = u16::from_str_radix(id_str.trim(), 16)
+                        && let Some((_, ref mut vendor)) = current_vendor {
                             vendor.products.insert(id, name.trim().to_string());
                         }
-                    }
-                }
                 continue;
             }
 
@@ -43,8 +41,8 @@ impl UsbIdDatabase {
                     vendors.insert(vid, vendor);
                 }
 
-                if let Some((id_str, name)) = line.split_once("  ") {
-                    if let Ok(id) = u16::from_str_radix(id_str.trim(), 16) {
+                if let Some((id_str, name)) = line.split_once("  ")
+                    && let Ok(id) = u16::from_str_radix(id_str.trim(), 16) {
                         current_vendor = Some((
                             id,
                             Vendor {
@@ -53,7 +51,6 @@ impl UsbIdDatabase {
                             },
                         ));
                     }
-                }
             }
         }
 

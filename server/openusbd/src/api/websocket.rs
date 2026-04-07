@@ -22,11 +22,10 @@ async fn handle_connection(mut socket: WebSocket, state: Arc<AppState>) {
         "type": "snapshot",
         "devices": devices,
     });
-    if let Ok(json) = serde_json::to_string(&snapshot) {
-        if socket.send(Message::Text(json.into())).await.is_err() {
+    if let Ok(json) = serde_json::to_string(&snapshot)
+        && socket.send(Message::Text(json.into())).await.is_err() {
             return;
         }
-    }
 
     // Subscribe to the event broadcast channel
     let mut rx = state.event_tx.subscribe();
