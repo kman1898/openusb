@@ -1,6 +1,6 @@
 [Unit]
 Description=OpenUSB Server Daemon
-Documentation=https://github.com/kman1898/usb-passthrough
+Documentation=https://github.com/kman1898/openusb
 After=network-online.target
 Wants=network-online.target
 

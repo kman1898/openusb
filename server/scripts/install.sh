@@ -4,7 +4,7 @@ set -euo pipefail
 # OpenUSB Server Installer
 # Usage: curl -fsSL https://get.openusb.dev | bash
 
-REPO="kman1898/usb-passthrough"
+REPO="kman1898/openusb"
 INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="/etc/openusb"
 LOG_DIR="/var/log/openusb"

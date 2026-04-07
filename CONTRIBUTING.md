@@ -7,7 +7,7 @@ Thanks for your interest in contributing to OpenUSB!
 1. Install [Rust](https://rustup.rs/) (1.85+)
 2. Clone the repo:
    ```bash
-   git clone https://github.com/kman1898/usb-passthrough.git
+   git clone https://github.com/kman1898/openusb.git
    cd usb-passthrough
    ```
 3. Build all crates:

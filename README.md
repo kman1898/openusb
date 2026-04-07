@@ -72,7 +72,7 @@ OpenUSB is under active development. See the [roadmap](#roadmap) for what's comi
 Requires [Rust](https://rustup.rs/) 1.85+.
 
 ```bash
-git clone https://github.com/kman1898/usb-passthrough.git
+git clone https://github.com/kman1898/openusb.git
 cd usb-passthrough
 cargo build
 ```

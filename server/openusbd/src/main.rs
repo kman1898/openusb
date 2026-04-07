@@ -1,3 +1,6 @@
+// Scaffolding phase — most fields/modules are defined but not yet wired up.
+#![allow(dead_code)]
+
 mod api;
 mod auth;
 mod config;
