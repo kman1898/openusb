@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenUSB Client Service
+Documentation=https://github.com/kman1898/openusb
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/openusb-client
+Restart=on-failure
+RestartSec=5
+User=root
+Group=root
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openusb-client
+
+[Install]
+WantedBy=multi-user.target

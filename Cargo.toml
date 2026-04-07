@@ -6,7 +6,7 @@ members = [
     "client/common",
     "cli",
     # "client/windows",   # Phase 2
-    # "client/linux",     # Phase 3
+    "client/linux",
     # "client/macos",     # Phase 3
     # "relay",            # Phase 5
 ]

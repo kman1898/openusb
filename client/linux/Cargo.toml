@@ -1,23 +1,19 @@
 [package]
-name = "openusb-cli"
-description = "OpenUSB command-line tool — discover, attach, and manage USB devices over the network"
+name = "openusb-client-linux"
+description = "OpenUSB Linux thin client — background service with local API"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "openusb"
+name = "openusb-client"
 path = "src/main.rs"
 
 [dependencies]
 openusb-shared = { workspace = true }
 openusb-client-common = { workspace = true }
-clap = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
-toml = { workspace = true }
-open = "5"
+clap = { workspace = true }
