@@ -20,3 +20,6 @@ axum = { workspace = true }
 tower-http = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
+tray-icon = { workspace = true }
+muda = { workspace = true }
+open = "5"

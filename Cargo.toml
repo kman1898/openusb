@@ -59,6 +59,10 @@ async-trait = "0.1"
 # Hostname detection
 gethostname = "1"
 
+# System tray
+tray-icon = "0.19"
+muda = "0.15"
+
 # USB (Linux)
 # nix = { version = "0.29", features = ["net", "ioctl"] }
 
