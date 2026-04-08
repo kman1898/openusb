@@ -16,7 +16,7 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/kman1898/openusb"
-rust-version = "1.85"
+rust-version = "1.86"
 
 [workspace.dependencies]
 # Shared across crates
@@ -37,7 +37,7 @@ toml = "0.8"
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 # mDNS
 mdns-sd = "0.12"

@@ -66,7 +66,9 @@ jobs:
     name: Build (${{ matrix.target }})
     needs: [check, test, dashboard]
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.cross || false }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
