@@ -106,9 +106,9 @@ jobs:
       - name: Build (native)
         if: "!matrix.cross"
         run: cargo build --release --target ${{ matrix.target }}
-      - name: Build (cross)
+      - name: Build (cross, server + CLI only)
         if: matrix.cross
-        run: cross build --release --target ${{ matrix.target }}
+        run: cross build --release --target ${{ matrix.target }} -p openusbd -p openusb-cli
       - name: Upload server binary
         uses: actions/upload-artifact@v4
         with:
