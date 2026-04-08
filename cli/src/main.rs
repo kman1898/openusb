@@ -166,16 +166,16 @@ async fn handle_auto_use(rule: AutoUseCommand) -> anyhow::Result<()> {
             println!("Added auto-use rule: device {}:{}", vendor_id, product_id);
         }
         AutoUseCommand::Vendor { vendor_id } => {
-            config
-                .auto_use_rules
-                .push(AutoUseRule::VendorId { vendor_id: vendor_id.clone() });
+            config.auto_use_rules.push(AutoUseRule::VendorId {
+                vendor_id: vendor_id.clone(),
+            });
             config.save()?;
             println!("Added auto-use rule: vendor {}", vendor_id);
         }
         AutoUseCommand::Hub { server } => {
-            config
-                .auto_use_rules
-                .push(AutoUseRule::Server { server: server.clone() });
+            config.auto_use_rules.push(AutoUseRule::Server {
+                server: server.clone(),
+            });
             config.save()?;
             println!("Added auto-use rule: all devices on {}", server);
         }
@@ -212,8 +212,9 @@ async fn handle_auto_use(rule: AutoUseCommand) -> anyhow::Result<()> {
 
 fn parse_server_addr(addr: &str) -> (String, u16) {
     if let Some((host, port_str)) = addr.rsplit_once(':')
-        && let Ok(port) = port_str.parse() {
-            return (host.to_string(), port);
-        }
+        && let Ok(port) = port_str.parse()
+    {
+        return (host.to_string(), port);
+    }
     (addr.to_string(), 8443)
 }

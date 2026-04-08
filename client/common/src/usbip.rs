@@ -97,13 +97,13 @@ fn parse_usbip_port(output: &str) -> Vec<AttachedDevice> {
             if let Some(ref info) = current
                 && let (Some(port), Some(server), Some(bus_id)) =
                     (info.get("port"), info.get("server"), info.get("bus_id"))
-                {
-                    devices.push(AttachedDevice {
-                        port: port.clone(),
-                        server: server.clone(),
-                        bus_id: bus_id.clone(),
-                    });
-                }
+            {
+                devices.push(AttachedDevice {
+                    port: port.clone(),
+                    server: server.clone(),
+                    bus_id: bus_id.clone(),
+                });
+            }
             // Parse: "Port 00: <Import> ... at ..."
             let mut info = HashMap::new();
             if let Some(port_num) = trimmed
@@ -117,14 +117,15 @@ fn parse_usbip_port(output: &str) -> Vec<AttachedDevice> {
             // Parse lines like: "  -> usbip://192.168.1.50:3240/1-1.2"
             if trimmed.contains("usbip://")
                 && let Some(url) = trimmed.split("usbip://").nth(1)
-                    && let Some((server_port, bus_id)) = url.split_once('/') {
-                        let server = server_port
-                            .rsplit_once(':')
-                            .map(|(s, _)| s)
-                            .unwrap_or(server_port);
-                        info.insert("server", server.to_string());
-                        info.insert("bus_id", bus_id.to_string());
-                    }
+                && let Some((server_port, bus_id)) = url.split_once('/')
+            {
+                let server = server_port
+                    .rsplit_once(':')
+                    .map(|(s, _)| s)
+                    .unwrap_or(server_port);
+                info.insert("server", server.to_string());
+                info.insert("bus_id", bus_id.to_string());
+            }
         }
     }
 
@@ -132,30 +133,29 @@ fn parse_usbip_port(output: &str) -> Vec<AttachedDevice> {
     if let Some(ref info) = current
         && let (Some(port), Some(server), Some(bus_id)) =
             (info.get("port"), info.get("server"), info.get("bus_id"))
-        {
-            devices.push(AttachedDevice {
-                port: port.clone(),
-                server: server.clone(),
-                bus_id: bus_id.clone(),
-            });
-        }
+    {
+        devices.push(AttachedDevice {
+            port: port.clone(),
+            server: server.clone(),
+            bus_id: bus_id.clone(),
+        });
+    }
 
     devices
 }
 
 /// Check if the usbip command is available.
 pub async fn check_driver() -> Result<DriverStatus> {
-    let output = Command::new("usbip")
-        .arg("version")
-        .output()
-        .await;
+    let output = Command::new("usbip").arg("version").output().await;
 
     match output {
         Ok(o) if o.status.success() => {
             let version = String::from_utf8_lossy(&o.stdout).trim().to_string();
             Ok(DriverStatus::Installed { version })
         }
-        Ok(_) => Ok(DriverStatus::Error { message: "usbip command failed".into() }),
+        Ok(_) => Ok(DriverStatus::Error {
+            message: "usbip command failed".into(),
+        }),
         Err(_) => Ok(DriverStatus::NotInstalled),
     }
 }

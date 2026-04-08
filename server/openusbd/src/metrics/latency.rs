@@ -40,8 +40,7 @@ impl LatencyTracker {
         entry.rtt_us = rtt_us;
         entry.samples += 1;
         // Running average
-        entry.avg_rtt_us =
-            (entry.avg_rtt_us * (entry.samples - 1) + rtt_us) / entry.samples;
+        entry.avg_rtt_us = (entry.avg_rtt_us * (entry.samples - 1) + rtt_us) / entry.samples;
         entry.last_measured = chrono::Utc::now();
     }
 

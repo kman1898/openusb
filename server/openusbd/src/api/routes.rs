@@ -50,10 +50,7 @@ pub fn api_router(state: Arc<AppState>) -> Router {
             "/api/v1/metrics/latency",
             axum::routing::get(rest::get_latency),
         )
-        .route(
-            "/api/v1/history",
-            axum::routing::get(rest::get_history),
-        )
+        .route("/api/v1/history", axum::routing::get(rest::get_history))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware,

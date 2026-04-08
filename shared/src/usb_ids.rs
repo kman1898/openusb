@@ -28,9 +28,10 @@ impl UsbIdDatabase {
                 let trimmed = line.trim();
                 if let Some((id_str, name)) = trimmed.split_once("  ")
                     && let Ok(id) = u16::from_str_radix(id_str.trim(), 16)
-                        && let Some((_, ref mut vendor)) = current_vendor {
-                            vendor.products.insert(id, name.trim().to_string());
-                        }
+                    && let Some((_, ref mut vendor)) = current_vendor
+                {
+                    vendor.products.insert(id, name.trim().to_string());
+                }
                 continue;
             }
 
@@ -42,15 +43,16 @@ impl UsbIdDatabase {
                 }
 
                 if let Some((id_str, name)) = line.split_once("  ")
-                    && let Ok(id) = u16::from_str_radix(id_str.trim(), 16) {
-                        current_vendor = Some((
-                            id,
-                            Vendor {
-                                name: name.trim().to_string(),
-                                products: HashMap::new(),
-                            },
-                        ));
-                    }
+                    && let Ok(id) = u16::from_str_radix(id_str.trim(), 16)
+                {
+                    current_vendor = Some((
+                        id,
+                        Vendor {
+                            name: name.trim().to_string(),
+                            products: HashMap::new(),
+                        },
+                    ));
+                }
             }
         }
 

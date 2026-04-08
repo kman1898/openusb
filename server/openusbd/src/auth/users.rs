@@ -77,7 +77,9 @@ impl UserDb {
                 "INSERT INTO users (username, password_hash, role) VALUES (?1, ?2, 'admin')",
                 rusqlite::params![&"admin", &hash],
             )?;
-            tracing::info!("Created default admin user (password: admin) — change this immediately!");
+            tracing::info!(
+                "Created default admin user (password: admin) — change this immediately!"
+            );
         }
 
         Ok(())
@@ -117,9 +119,9 @@ impl UserDb {
 
     /// List all users (without password hashes).
     pub fn list_users(&self) -> Result<Vec<User>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT id, username, password_hash, role, enabled, created_at FROM users ORDER BY id")?;
+        let mut stmt = self.conn.prepare(
+            "SELECT id, username, password_hash, role, enabled, created_at FROM users ORDER BY id",
+        )?;
         let users = stmt
             .query_map([], |row| {
                 Ok(User {
@@ -167,21 +169,27 @@ impl UserDb {
                 "UPDATE users SET password_hash = ?1 WHERE username = ?2",
                 rusqlite::params![&hash, username],
             )?;
-            if changes > 0 { updated = true; }
+            if changes > 0 {
+                updated = true;
+            }
         }
         if let Some(ref role) = update.role {
             let changes = self.conn.execute(
                 "UPDATE users SET role = ?1 WHERE username = ?2",
                 rusqlite::params![role, username],
             )?;
-            if changes > 0 { updated = true; }
+            if changes > 0 {
+                updated = true;
+            }
         }
         if let Some(enabled) = update.enabled {
             let changes = self.conn.execute(
                 "UPDATE users SET enabled = ?1 WHERE username = ?2",
                 rusqlite::params![enabled, username],
             )?;
-            if changes > 0 { updated = true; }
+            if changes > 0 {
+                updated = true;
+            }
         }
         Ok(updated)
     }

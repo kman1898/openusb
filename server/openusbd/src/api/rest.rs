@@ -291,9 +291,7 @@ pub async fn delete_user(
 // ──── ACL Management ────
 
 /// GET /api/v1/acl
-pub async fn get_acls(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn get_acls(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let acl = state.acl.read().await;
     Json(serde_json::json!(acl.all_rules()))
 }
@@ -322,17 +320,13 @@ pub async fn delete_device_acl(
 // ──── Metrics & History ────
 
 /// GET /api/v1/metrics/bandwidth
-pub async fn get_bandwidth(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn get_bandwidth(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let stats = state.bandwidth.all_stats().await;
     Json(serde_json::json!(stats))
 }
 
 /// GET /api/v1/metrics/latency
-pub async fn get_latency(
-    State(state): State<Arc<AppState>>,
-) -> Json<serde_json::Value> {
+pub async fn get_latency(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let stats = state.latency.all_stats().await;
     Json(serde_json::json!(stats))
 }

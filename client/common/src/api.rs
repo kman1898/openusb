@@ -50,10 +50,10 @@ fn local_api_router(state: Arc<LocalApiState>) -> Router {
 }
 
 /// GET /api/status
-async fn get_status(
-    State(_state): State<Arc<LocalApiState>>,
-) -> Json<serde_json::Value> {
-    let driver = usbip::check_driver().await.unwrap_or(usbip::DriverStatus::NotInstalled);
+async fn get_status(State(_state): State<Arc<LocalApiState>>) -> Json<serde_json::Value> {
+    let driver = usbip::check_driver()
+        .await
+        .unwrap_or(usbip::DriverStatus::NotInstalled);
     Json(serde_json::json!({
         "version": env!("CARGO_PKG_VERSION"),
         "os": std::env::consts::OS,
@@ -106,9 +106,7 @@ async fn detach_all() -> Result<StatusCode, ApiError> {
 }
 
 /// GET /api/servers — discovered servers via mDNS.
-async fn get_servers(
-    State(state): State<Arc<LocalApiState>>,
-) -> Json<serde_json::Value> {
+async fn get_servers(State(state): State<Arc<LocalApiState>>) -> Json<serde_json::Value> {
     let servers = state.browser.servers();
     let map = servers.read().await;
     let list: Vec<_> = map
@@ -135,9 +133,7 @@ async fn get_driver() -> Json<serde_json::Value> {
 }
 
 /// GET /api/config
-async fn get_config(
-    State(state): State<Arc<LocalApiState>>,
-) -> Json<ClientConfig> {
+async fn get_config(State(state): State<Arc<LocalApiState>>) -> Json<ClientConfig> {
     let config = state.config.read().await.clone();
     Json(config)
 }

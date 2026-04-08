@@ -25,9 +25,16 @@ fn default_reconnect_delay() -> u64 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum AutoUseRule {
-    Device { vendor_id: String, product_id: String },
-    VendorId { vendor_id: String },
-    Server { server: String },
+    Device {
+        vendor_id: String,
+        product_id: String,
+    },
+    VendorId {
+        vendor_id: String,
+    },
+    Server {
+        server: String,
+    },
     All,
 }
 

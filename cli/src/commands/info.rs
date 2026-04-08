@@ -15,16 +15,31 @@ pub async fn run(address: &str) -> Result<()> {
     println!("  Devices: {}", info.device_count);
     println!("  Clients: {}", info.client_count);
     println!("  Uptime: {}s", info.uptime_seconds);
-    println!("  TLS: {}", if info.tls_enabled { "enabled" } else { "disabled" });
-    println!("  Auth: {}", if info.auth_required { "required" } else { "open" });
+    println!(
+        "  TLS: {}",
+        if info.tls_enabled {
+            "enabled"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  Auth: {}",
+        if info.auth_required {
+            "required"
+        } else {
+            "open"
+        }
+    );
 
     Ok(())
 }
 
 fn parse_server_addr(addr: &str) -> (String, u16) {
     if let Some((host, port_str)) = addr.rsplit_once(':')
-        && let Ok(port) = port_str.parse() {
-            return (host.to_string(), port);
-        }
+        && let Ok(port) = port_str.parse()
+    {
+        return (host.to_string(), port);
+    }
     (addr.to_string(), 8443)
 }

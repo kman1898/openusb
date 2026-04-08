@@ -57,9 +57,14 @@ async fn record_to_history(state: &AppState, event: &ServerEvent) {
             None,
             client_name.as_deref(),
         ),
-        ServerEvent::ClientDisconnected { client_ip } => {
-            db.record("client_disconnected", None, None, Some(client_ip), None, None)
-        }
+        ServerEvent::ClientDisconnected { client_ip } => db.record(
+            "client_disconnected",
+            None,
+            None,
+            Some(client_ip),
+            None,
+            None,
+        ),
         ServerEvent::DeviceInUse {
             bus_id, client_ip, ..
         } => db.record(

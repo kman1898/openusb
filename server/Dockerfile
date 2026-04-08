@@ -17,7 +17,7 @@ RUN cargo build --release -p openusbd
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    linux-tools-generic usbip ca-certificates \
+    usbip hwdata ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Create directories
