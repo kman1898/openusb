@@ -7,5 +7,6 @@ pub mod discovery;
 pub mod events;
 pub mod reconnect;
 pub mod tls;
+#[cfg(feature = "tray")]
 pub mod tray;
 pub mod usbip;

@@ -5,6 +5,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+default = []
+tray = ["dep:tray-icon", "dep:muda", "dep:open"]
+
 [dependencies]
 openusb-shared = { workspace = true }
 serde = { workspace = true }
@@ -20,6 +24,6 @@ axum = { workspace = true }
 tower-http = { workspace = true }
 chrono = { workspace = true }
 uuid = { workspace = true }
-tray-icon = { workspace = true }
-muda = { workspace = true }
-open = "5"
+tray-icon = { workspace = true, optional = true }
+muda = { workspace = true, optional = true }
+open = { version = "5", optional = true }
