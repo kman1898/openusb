@@ -1,0 +1,12 @@
+Package: openusb-server
+Version: 0.1.0
+Section: net
+Priority: optional
+Architecture: ARCH
+Depends: linux-tools-generic | usbip
+Maintainer: kman1898
+Description: OpenUSB Server - Share USB devices over the network
+ OpenUSB is an open-source USB-over-IP solution that allows sharing
+ USB devices connected to one machine with other machines on the network.
+ This package contains the server daemon (openusbd) and web dashboard.
+Homepage: https://github.com/kman1898/openusb

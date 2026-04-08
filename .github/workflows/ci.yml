@@ -37,8 +37,34 @@ jobs:
       - name: Run tests
         run: cargo test --all
 
+  dashboard:
+    name: Build Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: web-dashboard/package-lock.json
+      - name: Install dependencies
+        working-directory: web-dashboard
+        run: npm ci
+      - name: Type check
+        working-directory: web-dashboard
+        run: npx tsc --noEmit
+      - name: Build
+        working-directory: web-dashboard
+        run: npm run build
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dashboard
+          path: web-dashboard/dist/
+
   build:
     name: Build (${{ matrix.target }})
+    needs: [check, test, dashboard]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -51,6 +77,12 @@ jobs:
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             cross: true
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -68,3 +100,14 @@ jobs:
       - name: Build (cross)
         if: matrix.cross
         run: cross build --release --target ${{ matrix.target }}
+      - name: Upload server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: openusbd-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/openusbd
+            target/${{ matrix.target }}/release/openusbd.exe
+            target/${{ matrix.target }}/release/openusb
+            target/${{ matrix.target }}/release/openusb.exe
+            target/${{ matrix.target }}/release/openusb-client
+            target/${{ matrix.target }}/release/openusb-client.exe

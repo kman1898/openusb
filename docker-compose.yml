@@ -1,0 +1,17 @@
+services:
+  openusb:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "3240:3240"   # USB/IP
+      - "8443:8443"   # Web dashboard + API
+    volumes:
+      - openusb-data:/var/lib/openusb
+      - ./server/config/openusb.toml.example:/etc/openusb/openusb.toml:ro
+    privileged: true   # Required for USB device access
+    restart: unless-stopped
+    network_mode: host  # Required for mDNS discovery
+
+volumes:
+  openusb-data:

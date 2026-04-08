@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+systemctl stop openusbd.service 2>/dev/null || true
+systemctl disable openusbd.service 2>/dev/null || true

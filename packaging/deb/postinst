@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+# Create config directory
+mkdir -p /etc/openusb
+if [ ! -f /etc/openusb/openusb.toml ]; then
+    cp /usr/share/openusb/openusb.toml.example /etc/openusb/openusb.toml
+fi
+
+# Create data directory
+mkdir -p /var/lib/openusb
+mkdir -p /var/log/openusb
+
+# Load USB/IP kernel modules
+modprobe usbip-core 2>/dev/null || true
+modprobe usbip-host 2>/dev/null || true
+
+# Enable and start the service
+systemctl daemon-reload
+systemctl enable openusbd.service
+systemctl start openusbd.service || true
+
+echo "OpenUSB server installed. Dashboard at http://localhost:8443"
+echo "Default login: admin / admin — change this immediately!"
