@@ -22,23 +22,29 @@ jobs:
           - name: linux-x86_64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            packages: -p openusbd -p openusb-cli -p openusb-client-linux
           - name: linux-arm64
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             cross: true
+            packages: -p openusbd -p openusb-cli
           - name: linux-armv7
             os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             cross: true
+            packages: -p openusbd -p openusb-cli
           - name: macos-arm64
             os: macos-latest
             target: aarch64-apple-darwin
+            packages: -p openusbd -p openusb-cli -p openusb-client-macos
           - name: macos-x86_64
             os: macos-latest
             target: x86_64-apple-darwin
+            packages: -p openusbd -p openusb-cli -p openusb-client-macos
           - name: windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
+            packages: -p openusbd -p openusb-cli -p openusb-client-windows
     steps:
       - uses: actions/checkout@v5
       - name: Install Linux GUI dependencies
@@ -55,10 +61,10 @@ jobs:
         run: cargo install cross --locked
       - name: Build (native)
         if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
-      - name: Build (cross, server + CLI only)
+        run: cargo build --release --target ${{ matrix.target }} ${{ matrix.packages }}
+      - name: Build (cross)
         if: matrix.cross
-        run: cross build --release --target ${{ matrix.target }} -p openusbd -p openusb-cli
+        run: cross build --release --target ${{ matrix.target }} ${{ matrix.packages }}
 
       - name: Package (unix)
         if: runner.os != 'Windows'

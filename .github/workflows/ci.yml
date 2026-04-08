@@ -77,18 +77,24 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            packages: -p openusbd -p openusb-cli -p openusb-client-linux
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             cross: true
+            packages: -p openusbd -p openusb-cli
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             cross: true
+            packages: -p openusbd -p openusb-cli
           - os: macos-latest
             target: aarch64-apple-darwin
+            packages: -p openusbd -p openusb-cli -p openusb-client-macos
           - os: macos-latest
             target: x86_64-apple-darwin
+            packages: -p openusbd -p openusb-cli -p openusb-client-macos
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            packages: -p openusbd -p openusb-cli -p openusb-client-windows
     steps:
       - uses: actions/checkout@v5
       - name: Install Linux GUI dependencies
@@ -105,10 +111,10 @@ jobs:
         run: cargo install cross --locked
       - name: Build (native)
         if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
-      - name: Build (cross, server + CLI only)
+        run: cargo build --release --target ${{ matrix.target }} ${{ matrix.packages }}
+      - name: Build (cross)
         if: matrix.cross
-        run: cross build --release --target ${{ matrix.target }} -p openusbd -p openusb-cli
+        run: cross build --release --target ${{ matrix.target }} ${{ matrix.packages }}
       - name: Upload server binary
         uses: actions/upload-artifact@v4
         with:
