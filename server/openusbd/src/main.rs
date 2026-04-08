@@ -61,16 +61,17 @@ async fn main() -> Result<()> {
     // Create platform backend
     let platform = usb::create_platform(simulate);
 
-    // Initialize user database
+    // Initialize databases
     let db_path = if simulate {
         "openusb-dev.db".to_string()
     } else {
         config.security.db_path.clone()
     };
     let user_db = auth::users::UserDb::open(&db_path)?;
+    let history_db = metrics::history::HistoryDb::open(&db_path)?;
 
     // Build application state
-    let state = Arc::new(state::AppState::new(config, platform, user_db));
+    let state = Arc::new(state::AppState::new(config, platform, user_db, history_db));
 
     // Initial device enumeration
     let manager = DeviceManager::new(state.clone());
@@ -91,9 +92,13 @@ async fn main() -> Result<()> {
     let api_state = state.clone();
     join_set.spawn(async move { api::rest::start_api_server(api_state).await });
 
-    // Event logger
+    // Event logger + history recorder
     let log_state = state.clone();
     join_set.spawn(async move { events::bus::run_event_logger(log_state).await });
+
+    // Event hooks (shell scripts)
+    let hooks_state = state.clone();
+    join_set.spawn(async move { events::hooks::run_event_hooks(hooks_state).await });
 
     info!("OpenUSB server running");
 

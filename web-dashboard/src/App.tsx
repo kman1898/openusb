@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Dashboard } from "./pages/Dashboard";
 import { LoginPage } from "./pages/LoginPage";
 import { UsersPage } from "./pages/UsersPage";
+import { LogsPage } from "./pages/LogsPage";
 import { useAuth } from "./hooks/useAuth";
 
-type Page = "dashboard" | "users";
+type Page = "dashboard" | "users" | "logs";
 
 function App() {
   const { isAuthenticated, isAdmin, username, login, logout, authFetch } = useAuth();
@@ -26,6 +27,9 @@ function App() {
           <button onClick={() => setPage("dashboard")} style={page === "dashboard" ? navBtnActive : navBtn}>
             Devices
           </button>
+          <button onClick={() => setPage("logs")} style={page === "logs" ? navBtnActive : navBtn}>
+            Logs
+          </button>
           {isAdmin && (
             <button onClick={() => setPage("users")} style={page === "users" ? navBtnActive : navBtn}>
               Users & Access
@@ -40,6 +44,7 @@ function App() {
 
       <main style={{ padding: "0 24px 24px" }}>
         {page === "dashboard" && <Dashboard />}
+        {page === "logs" && <LogsPage authFetch={authFetch} />}
         {page === "users" && isAdmin && <UsersPage authFetch={authFetch} />}
       </main>
     </div>

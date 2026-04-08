@@ -319,6 +319,53 @@ pub async fn delete_device_acl(
     StatusCode::OK
 }
 
+// ──── Metrics & History ────
+
+/// GET /api/v1/metrics/bandwidth
+pub async fn get_bandwidth(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let stats = state.bandwidth.all_stats().await;
+    Json(serde_json::json!(stats))
+}
+
+/// GET /api/v1/metrics/latency
+pub async fn get_latency(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let stats = state.latency.all_stats().await;
+    Json(serde_json::json!(stats))
+}
+
+#[derive(Deserialize)]
+pub struct HistoryQuery {
+    #[serde(default = "default_history_limit")]
+    pub limit: usize,
+    pub event_type: Option<String>,
+}
+
+fn default_history_limit() -> usize {
+    100
+}
+
+/// GET /api/v1/history?limit=100&event_type=device_attached
+pub async fn get_history(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(query): axum::extract::Query<HistoryQuery>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let db = state.history_db.lock().await;
+    let entries = if let Some(ref event_type) = query.event_type {
+        db.by_type(event_type, query.limit)
+    } else {
+        db.recent(query.limit)
+    }
+    .map_err(|e| ApiError {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        message: e.to_string(),
+    })?;
+    Ok(Json(serde_json::json!(entries)))
+}
+
 // ──── Error Type ────
 
 pub struct ApiError {
