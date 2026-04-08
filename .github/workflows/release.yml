@@ -23,38 +23,46 @@ jobs:
           cache: "npm"
           cache-dependency-path: web-dashboard/package-lock.json
       - run: cd web-dashboard && npm ci && npm run build
+      - name: Package dashboard
+        run: tar czf openusb-web-dashboard.tar.gz -C web-dashboard/dist .
       - uses: actions/upload-artifact@v4
         with:
           name: web-dashboard
-          path: web-dashboard/dist/
+          path: openusb-web-dashboard.tar.gz
 
   build:
-    name: Build (${{ matrix.target }})
+    name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - name: linux-x86_64
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            archive: tar.gz
-          - os: ubuntu-latest
+            ext: ""
+          - name: linux-arm64
+            os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             cross: true
-            archive: tar.gz
-          - os: ubuntu-latest
+            ext: ""
+          - name: linux-armv7
+            os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             cross: true
-            archive: tar.gz
-          - os: macos-latest
+            ext: ""
+          - name: macos-arm64
+            os: macos-latest
             target: aarch64-apple-darwin
-            archive: tar.gz
-          - os: macos-latest
+            ext: ""
+          - name: macos-x86_64
+            os: macos-latest
             target: x86_64-apple-darwin
-            archive: tar.gz
-          - os: windows-latest
+            ext: ""
+          - name: windows-x86_64
+            os: windows-latest
             target: x86_64-pc-windows-msvc
-            archive: zip
+            ext: ".exe"
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -72,23 +80,34 @@ jobs:
       - name: Build (cross)
         if: matrix.cross
         run: cross build --release --target ${{ matrix.target }}
-      - name: Package (tar.gz)
-        if: matrix.archive == 'tar.gz'
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../openusb-${{ matrix.target }}.tar.gz openusbd openusb openusb-client 2>/dev/null || true
-      - name: Package (zip)
-        if: matrix.archive == 'zip'
+          mkdir -p staging
+          cp target/${{ matrix.target }}/release/openusbd${{ matrix.ext }} staging/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/openusb${{ matrix.ext }} staging/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/openusb-client${{ matrix.ext }} staging/ 2>/dev/null || true
+          ls -la staging/
+          tar czf openusb-${{ matrix.name }}.tar.gz -C staging .
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
-          cd target/${{ matrix.target }}/release
-          7z a ../../../openusb-${{ matrix.target }}.zip openusbd.exe openusb.exe openusb-client.exe 2>/dev/null || true
+          mkdir -p staging
+          cp target/${{ matrix.target }}/release/openusbd.exe staging/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/openusb.exe staging/ 2>/dev/null || true
+          cp target/${{ matrix.target }}/release/openusb-client.exe staging/ 2>/dev/null || true
+          ls -la staging/
+          cd staging && 7z a ../openusb-${{ matrix.name }}.zip *
+
       - uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.target }}
+          name: release-${{ matrix.name }}
           path: |
-            openusb-${{ matrix.target }}.tar.gz
-            openusb-${{ matrix.target }}.zip
+            openusb-${{ matrix.name }}.tar.gz
+            openusb-${{ matrix.name }}.zip
 
   release:
     name: Create Release
@@ -99,6 +118,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+      - name: List release files
+        run: find artifacts -type f | sort
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
