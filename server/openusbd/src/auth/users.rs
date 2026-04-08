@@ -40,6 +40,7 @@ impl UserDb {
         let dir = Path::new(path).parent().unwrap_or(Path::new("."));
         std::fs::create_dir_all(dir)?;
         let conn = Connection::open(path)?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;")?;
         let db = Self { conn };
         db.init()?;
         Ok(db)
@@ -154,26 +155,35 @@ impl UserDb {
 
     /// Update an existing user.
     pub fn update_user(&self, username: &str, update: &UpdateUser) -> Result<bool> {
+        if update.password.is_none() && update.role.is_none() && update.enabled.is_none() {
+            return Ok(false);
+        }
+
+        let mut updated = false;
+
         if let Some(ref pwd) = update.password {
             let hash = password::hash_password(pwd)?;
-            self.conn.execute(
+            let changes = self.conn.execute(
                 "UPDATE users SET password_hash = ?1 WHERE username = ?2",
                 rusqlite::params![&hash, username],
             )?;
+            if changes > 0 { updated = true; }
         }
         if let Some(ref role) = update.role {
-            self.conn.execute(
+            let changes = self.conn.execute(
                 "UPDATE users SET role = ?1 WHERE username = ?2",
                 rusqlite::params![role, username],
             )?;
+            if changes > 0 { updated = true; }
         }
         if let Some(enabled) = update.enabled {
-            self.conn.execute(
+            let changes = self.conn.execute(
                 "UPDATE users SET enabled = ?1 WHERE username = ?2",
                 rusqlite::params![enabled, username],
             )?;
+            if changes > 0 { updated = true; }
         }
-        Ok(self.conn.changes() > 0)
+        Ok(updated)
     }
 
     /// Delete a user.

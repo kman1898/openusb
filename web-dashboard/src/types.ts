@@ -15,7 +15,7 @@ export interface UsbDevice {
   state: DeviceState;
 }
 
-export type UsbSpeed = "low" | "full" | "high" | "super" | "super_plus" | "unknown";
+export type UsbSpeed = "low" | "full" | "high" | "super" | "superplus" | "unknown";
 
 export type DeviceState =
   | { status: "not_shared" }

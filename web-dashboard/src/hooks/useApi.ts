@@ -2,11 +2,33 @@ import type { ServerInfo, UsbDevice } from "../types";
 
 const API_BASE = `${window.location.origin}/api/v1`;
 
+function getToken(): string | null {
+  return localStorage.getItem("openusb_token");
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string> || {}),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const { headers: _dropped, ...restInit } = init || {};
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
+    headers,
+    ...restInit,
   });
+  if (res.status === 401) {
+    localStorage.removeItem("openusb_token");
+    localStorage.removeItem("openusb_username");
+    localStorage.removeItem("openusb_role");
+    window.location.reload();
+    throw new Error("Session expired");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error || res.statusText);

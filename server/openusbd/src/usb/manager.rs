@@ -115,46 +115,60 @@ impl DeviceManager {
 
     /// Share (bind) a device to make it available over the network.
     pub async fn share_device(&self, bus_id: &str) -> Result<()> {
-        let mut devices = self.state.devices.write().await;
-        let device = devices.get_mut(bus_id);
-
-        match device {
-            None => bail!("Device not found: {bus_id}"),
-            Some(device) => match &device.state {
-                DeviceState::Available | DeviceState::InUse { .. } => {
-                    bail!("Device {bus_id} is already shared")
-                }
-                DeviceState::NotShared => {
-                    self.state.platform.bind_device(bus_id).await?;
-                    device.state = DeviceState::Available;
-                    self.state.emit(ServerEvent::DeviceShared {
-                        bus_id: bus_id.to_string(),
-                    });
-                    Ok(())
-                }
-            },
+        // Check state first, then drop the lock before platform I/O
+        {
+            let devices = self.state.devices.read().await;
+            match devices.get(bus_id) {
+                None => bail!("Device not found: {bus_id}"),
+                Some(device) => match &device.state {
+                    DeviceState::Available | DeviceState::InUse { .. } => {
+                        bail!("Device {bus_id} is already shared")
+                    }
+                    DeviceState::NotShared => {} // proceed
+                },
+            }
         }
+
+        // Platform I/O without holding the lock
+        self.state.platform.bind_device(bus_id).await?;
+
+        // Re-acquire lock and update state
+        let mut devices = self.state.devices.write().await;
+        if let Some(device) = devices.get_mut(bus_id) {
+            device.state = DeviceState::Available;
+        }
+        self.state.emit(ServerEvent::DeviceShared {
+            bus_id: bus_id.to_string(),
+        });
+        Ok(())
     }
 
     /// Unshare (unbind) a device from the network.
     pub async fn unshare_device(&self, bus_id: &str) -> Result<()> {
-        let mut devices = self.state.devices.write().await;
-        let device = devices.get_mut(bus_id);
-
-        match device {
-            None => bail!("Device not found: {bus_id}"),
-            Some(device) => match &device.state {
-                DeviceState::NotShared => bail!("Device {bus_id} is not shared"),
-                DeviceState::Available | DeviceState::InUse { .. } => {
-                    self.state.platform.unbind_device(bus_id).await?;
-                    device.state = DeviceState::NotShared;
-                    self.state.emit(ServerEvent::DeviceUnshared {
-                        bus_id: bus_id.to_string(),
-                    });
-                    Ok(())
-                }
-            },
+        // Check state first, then drop the lock before platform I/O
+        {
+            let devices = self.state.devices.read().await;
+            match devices.get(bus_id) {
+                None => bail!("Device not found: {bus_id}"),
+                Some(device) => match &device.state {
+                    DeviceState::NotShared => bail!("Device {bus_id} is not shared"),
+                    DeviceState::Available | DeviceState::InUse { .. } => {} // proceed
+                },
+            }
         }
+
+        // Platform I/O without holding the lock
+        self.state.platform.unbind_device(bus_id).await?;
+
+        // Re-acquire lock and update state
+        let mut devices = self.state.devices.write().await;
+        if let Some(device) = devices.get_mut(bus_id) {
+            device.state = DeviceState::NotShared;
+        }
+        self.state.emit(ServerEvent::DeviceUnshared {
+            bus_id: bus_id.to_string(),
+        });
+        Ok(())
     }
 
     /// Set a nickname for a device.

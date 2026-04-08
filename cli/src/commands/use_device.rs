@@ -11,13 +11,9 @@ pub async fn run(address: &str, _password: Option<&str>) -> Result<()> {
 }
 
 fn parse_address(address: &str) -> Result<(String, String)> {
-    // Try "host:port/busid" format first
-    if let Some((server, bus_id)) = address.rsplit_once('/') {
+    // Try "host/busid" or "host:port/busid" format first (unambiguous)
+    if let Some((server, bus_id)) = address.split_once('/') {
         return Ok((server.to_string(), bus_id.to_string()));
     }
-    // Try "server.busid" format (dot-separated, last segment is bus_id)
-    if let Some((server, bus_id)) = address.rsplit_once('.') {
-        return Ok((server.to_string(), bus_id.to_string()));
-    }
-    anyhow::bail!("Invalid address format. Use 'host:port/busid' or 'server.busid'");
+    anyhow::bail!("Invalid address format. Use 'host/busid' or 'host:port/busid'");
 }

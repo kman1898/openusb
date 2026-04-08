@@ -61,6 +61,13 @@ async fn main() -> Result<()> {
     // Create platform backend
     let platform = usb::create_platform(simulate);
 
+    // Warn about default JWT secret
+    if config.security.mode != "open"
+        && config.security.jwt_secret == "openusb-change-this-secret"
+    {
+        tracing::warn!("Using default JWT secret! Set 'jwt_secret' in [security] config for production.");
+    }
+
     // Initialize databases
     let db_path = if simulate {
         "openusb-dev.db".to_string()

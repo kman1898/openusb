@@ -70,9 +70,15 @@ impl ClientConfig {
 }
 
 fn dirs_config_dir() -> PathBuf {
+    // Windows: use APPDATA (e.g., C:\Users\user\AppData\Roaming)
+    if let Some(dir) = std::env::var_os("APPDATA") {
+        return PathBuf::from(dir);
+    }
+    // Linux/macOS: use XDG_CONFIG_HOME
     if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
         return PathBuf::from(dir);
     }
+    // Fallback: ~/.config
     if let Some(home) = std::env::var_os("HOME") {
         return PathBuf::from(home).join(".config");
     }

@@ -27,6 +27,7 @@ impl HistoryDb {
         let dir = Path::new(path).parent().unwrap_or(Path::new("."));
         std::fs::create_dir_all(dir)?;
         let conn = Connection::open(path)?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;")?;
         let db = Self { conn };
         db.init()?;
         Ok(db)

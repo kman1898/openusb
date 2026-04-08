@@ -39,12 +39,21 @@ pub struct ServerSection {
     pub hostname: Option<String>,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DiscoverySection {
     #[serde(default = "default_true")]
     pub enabled: bool,
     #[serde(default = "default_mdns_name")]
     pub mdns_name: String,
+}
+
+impl Default for DiscoverySection {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            mdns_name: default_mdns_name(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,7 +97,7 @@ impl Default for SecuritySection {
     }
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct DevicesSection {
     #[serde(default = "default_true")]
     pub auto_share: bool,
@@ -102,6 +111,19 @@ pub struct DevicesSection {
     pub nicknames: HashMap<String, String>,
     #[serde(default)]
     pub access: HashMap<String, openusb_shared::config::DeviceAcl>,
+}
+
+impl Default for DevicesSection {
+    fn default() -> Self {
+        Self {
+            auto_share: true,
+            ignore_vendor_ids: Vec::new(),
+            ignore_bus_ids: Vec::new(),
+            allow_vendor_ids: Vec::new(),
+            nicknames: HashMap::new(),
+            access: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]

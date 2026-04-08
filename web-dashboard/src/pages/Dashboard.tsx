@@ -10,7 +10,7 @@ import { DriverStatus } from "../components/DriverStatus";
 
 export function Dashboard() {
   const api = useApi();
-  const { client, attach, detach, getAutoUseRules, addAutoUseRule, installDriver } = useLocalClient();
+  const { client, attach, detach, getAutoUseRules, addAutoUseRule } = useLocalClient();
   const [devices, setDevices] = useState<Map<string, UsbDevice>>(new Map());
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export function Dashboard() {
       </div>
 
       {client.installed && client.driver_status && client.driver_status.status !== "installed" && (
-        <DriverStatus driver={client.driver_status} onInstall={installDriver} />
+        <DriverStatus driver={client.driver_status} />
       )}
 
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
