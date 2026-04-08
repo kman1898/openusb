@@ -50,7 +50,7 @@ tokio-rustls = "0.26"
 rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Auth
-argon2 = "0.5"
+argon2 = { version = "0.5", features = ["std"] }
 jsonwebtoken = "9"
 
 # Async trait (for dyn dispatch of async traits)

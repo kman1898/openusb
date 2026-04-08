@@ -1,3 +1,5 @@
+use crate::auth::acl::AclEngine;
+use crate::auth::users::UserDb;
 use crate::config::ServerConfig;
 use crate::usb::filter::DeviceFilterRules;
 use crate::usb::platform::UsbPlatform;
@@ -6,7 +8,7 @@ use openusb_shared::protocol::ServerEvent;
 use openusb_shared::usb_ids::UsbIdDatabase;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, broadcast};
+use tokio::sync::{Mutex, RwLock, broadcast};
 
 /// Central application state shared across all subsystems.
 pub struct AppState {
@@ -18,10 +20,12 @@ pub struct AppState {
     pub usb_ids: Option<UsbIdDatabase>,
     pub nicknames: HashMap<String, String>,
     pub filter: DeviceFilterRules,
+    pub user_db: Mutex<UserDb>,
+    pub acl: RwLock<AclEngine>,
 }
 
 impl AppState {
-    pub fn new(config: ServerConfig, platform: Arc<dyn UsbPlatform>) -> Self {
+    pub fn new(config: ServerConfig, platform: Arc<dyn UsbPlatform>, user_db: UserDb) -> Self {
         let (event_tx, _) = broadcast::channel(256);
 
         let filter = DeviceFilterRules::from_config(
@@ -31,6 +35,7 @@ impl AppState {
         );
 
         let nicknames = config.devices.nicknames.clone();
+        let acl = AclEngine::new(config.devices.access.clone());
 
         // Try to load the USB ID database from common locations
         let usb_ids = load_usb_ids();
@@ -44,6 +49,8 @@ impl AppState {
             usb_ids,
             nicknames,
             filter,
+            user_db: Mutex::new(user_db),
+            acl: RwLock::new(acl),
         }
     }
 
@@ -59,7 +66,6 @@ impl AppState {
 
     /// Emit a server event to all subscribers.
     pub fn emit(&self, event: ServerEvent) {
-        // Ignore send errors — they just mean no receivers are listening
         let _ = self.event_tx.send(event);
     }
 }

@@ -1,26 +1,100 @@
+use crate::auth::tokens;
+use crate::auth::users::{CreateUser, UpdateUser};
 use crate::state::AppState;
 use crate::usb::manager::DeviceManager;
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use openusb_shared::config::DeviceAcl;
 use openusb_shared::protocol::ServerInfo;
 use serde::Deserialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::info;
 
-use super::routes;
-
 /// Start the REST API + WebSocket server.
 pub async fn start_api_server(state: Arc<AppState>) -> anyhow::Result<()> {
-    let app = routes::api_router(state.clone());
+    let app = super::routes::api_router(state.clone());
     let addr = SocketAddr::from(([0, 0, 0, 0], state.config.server.api_port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!(%addr, "REST API server listening");
     axum::serve(listener, app).await?;
     Ok(())
 }
+
+// ──── Auth ────
+
+#[derive(Deserialize)]
+pub struct LoginBody {
+    pub username: String,
+    pub password: String,
+}
+
+/// POST /api/v1/auth/login
+pub async fn login(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<LoginBody>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    // In open mode, generate a token for anyone
+    if state.config.security.mode == "open" {
+        let token = tokens::create_token(
+            &body.username,
+            "admin",
+            &state.config.security.jwt_secret,
+            state.config.security.token_expire_hours,
+        )
+        .map_err(|e| ApiError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            message: e.to_string(),
+        })?;
+        return Ok(Json(serde_json::json!({
+            "token": token,
+            "username": body.username,
+            "role": "admin",
+        })));
+    }
+
+    let db = state.user_db.lock().await;
+    let user = db
+        .authenticate(&body.username, &body.password)
+        .map_err(|e| ApiError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            message: e.to_string(),
+        })?;
+
+    match user {
+        Some(u) => {
+            let token = tokens::create_token(
+                &u.username,
+                &u.role,
+                &state.config.security.jwt_secret,
+                state.config.security.token_expire_hours,
+            )
+            .map_err(|e| ApiError {
+                status: StatusCode::INTERNAL_SERVER_ERROR,
+                message: e.to_string(),
+            })?;
+            Ok(Json(serde_json::json!({
+                "token": token,
+                "username": u.username,
+                "role": u.role,
+            })))
+        }
+        None => {
+            state.emit(openusb_shared::protocol::ServerEvent::AuthFailed {
+                client_ip: "unknown".to_string(),
+                reason: format!("Invalid credentials for {}", body.username),
+            });
+            Err(ApiError {
+                status: StatusCode::UNAUTHORIZED,
+                message: "Invalid username or password".to_string(),
+            })
+        }
+    }
+}
+
+// ──── Server Info ────
 
 /// GET /api/v1/server/info
 pub async fn get_server_info(State(state): State<Arc<AppState>>) -> Json<ServerInfo> {
@@ -50,6 +124,8 @@ pub async fn get_server_info(State(state): State<Arc<AppState>>) -> Json<ServerI
         auth_required: state.config.security.mode != "open",
     })
 }
+
+// ──── Devices ────
 
 /// GET /api/v1/devices
 pub async fn list_devices(
@@ -110,7 +186,141 @@ pub async fn set_nickname(
     Ok(StatusCode::OK)
 }
 
-/// Consistent error response for the API.
+/// POST /api/v1/devices/:bus_id/kick — force-disconnect a client from a device.
+pub async fn kick_device(
+    State(state): State<Arc<AppState>>,
+    Path(bus_id): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let mut devices = state.devices.write().await;
+    if let Some(device) = devices.get_mut(&bus_id) {
+        if matches!(
+            device.state,
+            openusb_shared::device::DeviceState::InUse { .. }
+        ) {
+            device.state = openusb_shared::device::DeviceState::Available;
+            state.emit(openusb_shared::protocol::ServerEvent::DeviceReleased {
+                bus_id: bus_id.clone(),
+            });
+            info!(bus_id = %bus_id, "Client kicked from device");
+            Ok(StatusCode::OK)
+        } else {
+            Err(ApiError {
+                status: StatusCode::BAD_REQUEST,
+                message: "Device is not in use".to_string(),
+            })
+        }
+    } else {
+        Err(ApiError {
+            status: StatusCode::NOT_FOUND,
+            message: "Device not found".to_string(),
+        })
+    }
+}
+
+// ──── User Management ────
+
+/// GET /api/v1/users
+pub async fn list_users(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let db = state.user_db.lock().await;
+    let users = db.list_users().map_err(|e| ApiError {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        message: e.to_string(),
+    })?;
+    Ok(Json(serde_json::json!(users)))
+}
+
+/// POST /api/v1/users
+pub async fn create_user(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<CreateUser>,
+) -> Result<(StatusCode, Json<serde_json::Value>), ApiError> {
+    let db = state.user_db.lock().await;
+    let user = db.create_user(&body).map_err(|e| ApiError {
+        status: StatusCode::BAD_REQUEST,
+        message: e.to_string(),
+    })?;
+    info!(username = %user.username, role = %user.role, "Created user");
+    Ok((StatusCode::CREATED, Json(serde_json::json!(user))))
+}
+
+/// PUT /api/v1/users/:username
+pub async fn update_user(
+    State(state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+    Json(body): Json<UpdateUser>,
+) -> Result<StatusCode, ApiError> {
+    let db = state.user_db.lock().await;
+    let updated = db.update_user(&username, &body).map_err(|e| ApiError {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        message: e.to_string(),
+    })?;
+    if updated {
+        info!(username = %username, "Updated user");
+        Ok(StatusCode::OK)
+    } else {
+        Err(ApiError {
+            status: StatusCode::NOT_FOUND,
+            message: "User not found".to_string(),
+        })
+    }
+}
+
+/// DELETE /api/v1/users/:username
+pub async fn delete_user(
+    State(state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let db = state.user_db.lock().await;
+    let deleted = db.delete_user(&username).map_err(|e| ApiError {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        message: e.to_string(),
+    })?;
+    if deleted {
+        info!(username = %username, "Deleted user");
+        Ok(StatusCode::OK)
+    } else {
+        Err(ApiError {
+            status: StatusCode::NOT_FOUND,
+            message: "User not found".to_string(),
+        })
+    }
+}
+
+// ──── ACL Management ────
+
+/// GET /api/v1/acl
+pub async fn get_acls(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let acl = state.acl.read().await;
+    Json(serde_json::json!(acl.all_rules()))
+}
+
+/// PUT /api/v1/acl/:device_key
+pub async fn set_device_acl(
+    State(state): State<Arc<AppState>>,
+    Path(device_key): Path<String>,
+    Json(body): Json<DeviceAcl>,
+) -> StatusCode {
+    let mut acl = state.acl.write().await;
+    acl.set_acl(device_key, body);
+    StatusCode::OK
+}
+
+/// DELETE /api/v1/acl/:device_key
+pub async fn delete_device_acl(
+    State(state): State<Arc<AppState>>,
+    Path(device_key): Path<String>,
+) -> StatusCode {
+    let mut acl = state.acl.write().await;
+    acl.remove_acl(&device_key);
+    StatusCode::OK
+}
+
+// ──── Error Type ────
+
 pub struct ApiError {
     pub status: StatusCode,
     pub message: String,

@@ -61,8 +61,16 @@ async fn main() -> Result<()> {
     // Create platform backend
     let platform = usb::create_platform(simulate);
 
+    // Initialize user database
+    let db_path = if simulate {
+        "openusb-dev.db".to_string()
+    } else {
+        config.security.db_path.clone()
+    };
+    let user_db = auth::users::UserDb::open(&db_path)?;
+
     // Build application state
-    let state = Arc::new(state::AppState::new(config, platform));
+    let state = Arc::new(state::AppState::new(config, platform, user_db));
 
     // Initial device enumeration
     let manager = DeviceManager::new(state.clone());

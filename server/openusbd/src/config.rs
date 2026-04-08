@@ -63,6 +63,12 @@ pub struct SecuritySection {
     pub tls_ca: String,
     #[serde(default)]
     pub tls_client_certs: bool,
+    #[serde(default = "default_jwt_secret")]
+    pub jwt_secret: String,
+    #[serde(default = "default_token_expire_hours")]
+    pub token_expire_hours: i64,
+    #[serde(default = "default_db_path")]
+    pub db_path: String,
 }
 
 impl Default for SecuritySection {
@@ -75,6 +81,9 @@ impl Default for SecuritySection {
             tls_key: String::new(),
             tls_ca: String::new(),
             tls_client_certs: false,
+            jwt_secret: default_jwt_secret(),
+            token_expire_hours: 24,
+            db_path: default_db_path(),
         }
     }
 }
@@ -240,4 +249,14 @@ fn default_log_max_size() -> u32 {
 }
 fn default_rotate_count() -> u32 {
     5
+}
+fn default_jwt_secret() -> String {
+    // In production, this should be set to a random secret in the config file
+    "openusb-change-this-secret".to_string()
+}
+fn default_token_expire_hours() -> i64 {
+    24
+}
+fn default_db_path() -> String {
+    "/var/lib/openusb/openusb.db".to_string()
 }
