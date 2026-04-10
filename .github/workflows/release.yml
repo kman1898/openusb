@@ -66,28 +66,79 @@ jobs:
         if: matrix.cross
         run: cross build --release --target ${{ matrix.target }} ${{ matrix.packages }}
 
-      - name: Package (unix)
-        if: runner.os != 'Windows'
+      # ── macOS: Create .app bundle + .dmg ──
+      - name: Create macOS app bundle
+        if: startsWith(matrix.name, 'macos')
         run: |
-          mkdir -p staging
-          for bin in openusbd openusb openusb-client; do
-            [ -f "target/${{ matrix.target }}/release/$bin" ] && cp "target/${{ matrix.target }}/release/$bin" staging/
-          done
-          echo "Contents:"
-          ls -la staging/
-          tar czf openusb-${{ matrix.name }}.tar.gz -C staging .
+          APP="staging/OpenUSB.app/Contents"
+          mkdir -p "$APP/MacOS" "$APP/Resources"
 
-      - name: Package (windows)
-        if: runner.os == 'Windows'
+          # Binary
+          cp "target/${{ matrix.target }}/release/openusb-client" "$APP/MacOS/"
+          chmod +x "$APP/MacOS/openusb-client"
+
+          # Info.plist
+          cp client/macos/Info.plist "$APP/"
+
+          # Icon
+          cp assets/AppIcon.icns "$APP/Resources/" 2>/dev/null || true
+
+          # Also include server + CLI loose in staging
+          cp "target/${{ matrix.target }}/release/openusbd" staging/ 2>/dev/null || true
+          cp "target/${{ matrix.target }}/release/openusb" staging/ 2>/dev/null || true
+
+          # Create DMG
+          DMG_TEMP=$(mktemp -d)
+          cp -R staging/OpenUSB.app "$DMG_TEMP/"
+          ln -s /Applications "$DMG_TEMP/Applications"
+          hdiutil create -volname "OpenUSB" -srcfolder "$DMG_TEMP" -ov -format UDZO "OpenUSB-${{ matrix.name }}.dmg"
+          rm -rf "$DMG_TEMP"
+
+          # Also tar the server binaries for headless use
+          mkdir -p server-staging
+          cp "target/${{ matrix.target }}/release/openusbd" server-staging/ 2>/dev/null || true
+          cp "target/${{ matrix.target }}/release/openusb" server-staging/ 2>/dev/null || true
+          tar czf openusb-${{ matrix.name }}-server.tar.gz -C server-staging .
+
+      # ── Windows: Package as zip with exe ──
+      - name: Package Windows
+        if: startsWith(matrix.name, 'windows')
         shell: bash
         run: |
           mkdir -p staging
           for bin in openusbd.exe openusb.exe openusb-client.exe; do
             [ -f "target/${{ matrix.target }}/release/$bin" ] && cp "target/${{ matrix.target }}/release/$bin" staging/
           done
+          # Rename client to OpenUSB.exe for user-friendly double-click
+          [ -f staging/openusb-client.exe ] && cp staging/openusb-client.exe staging/OpenUSB.exe
           echo "Contents:"
           ls -la staging/
           cd staging && 7z a ../openusb-${{ matrix.name }}.zip *
+
+      # ── Linux desktop: tar with .desktop file ──
+      - name: Package Linux desktop
+        if: matrix.name == 'linux-x86_64'
+        run: |
+          mkdir -p staging
+          cp "target/${{ matrix.target }}/release/openusbd" staging/ 2>/dev/null || true
+          cp "target/${{ matrix.target }}/release/openusb" staging/ 2>/dev/null || true
+          cp "target/${{ matrix.target }}/release/openusb-client" staging/ 2>/dev/null || true
+          cp client/linux/openusb-client.desktop staging/
+          cp assets/icon-256.png staging/openusb.png 2>/dev/null || true
+          echo "Contents:"
+          ls -la staging/
+          tar czf openusb-${{ matrix.name }}.tar.gz -C staging .
+
+      # ── Linux ARM (server only): tar ──
+      - name: Package Linux ARM
+        if: matrix.cross
+        run: |
+          mkdir -p staging
+          cp "target/${{ matrix.target }}/release/openusbd" staging/ 2>/dev/null || true
+          cp "target/${{ matrix.target }}/release/openusb" staging/ 2>/dev/null || true
+          echo "Contents:"
+          ls -la staging/
+          tar czf openusb-${{ matrix.name }}.tar.gz -C staging .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -95,6 +146,8 @@ jobs:
           path: |
             openusb-${{ matrix.name }}.tar.gz
             openusb-${{ matrix.name }}.zip
+            openusb-${{ matrix.name }}-server.tar.gz
+            OpenUSB-${{ matrix.name }}.dmg
 
   release:
     name: Create Release

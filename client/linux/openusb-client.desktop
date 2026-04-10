@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=OpenUSB
+Comment=Share USB devices over the network
+Exec=/usr/local/bin/openusb-client
+Icon=openusb
+Type=Application
+Categories=Utility;System;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
