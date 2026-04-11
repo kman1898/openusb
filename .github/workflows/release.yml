@@ -76,6 +76,13 @@ jobs:
             --entitlements /dev/null \
             "OpenUSB.app"
 
+      - name: Ad-hoc sign (fallback when no certificate)
+        if: env.MACOS_CERTIFICATE == ''
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        run: |
+          codesign --force --deep --sign - "OpenUSB.app"
+
       - name: Notarize app
         if: env.MACOS_NOTARIZE_APPLE_ID != ''
         env:
