@@ -76,13 +76,6 @@ jobs:
             --entitlements /dev/null \
             "OpenUSB.app"
 
-      - name: Ad-hoc sign (fallback when no certificate)
-        if: env.MACOS_CERTIFICATE == ''
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-        run: |
-          codesign --force --deep --sign - "OpenUSB.app"
-
       - name: Notarize app
         if: env.MACOS_NOTARIZE_APPLE_ID != ''
         env:
@@ -98,15 +91,26 @@ jobs:
             --wait
           xcrun stapler staple "OpenUSB.app"
 
-      - name: Create release ZIP
+      - name: Create DMG and ZIP
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION="${{ github.event.inputs.version }}"
           fi
+
+          # Create DMG with drag-to-Applications
+          DMG_TEMP=$(mktemp -d)
+          cp -R OpenUSB.app "$DMG_TEMP/"
+          ln -s /Applications "$DMG_TEMP/Applications"
+          hdiutil create -volname "OpenUSB" -srcfolder "$DMG_TEMP" \
+            -ov -format UDZO "openusb_v${VERSION}_macos_${{ matrix.arch }}.dmg"
+          rm -rf "$DMG_TEMP"
+
+          # Also create a ZIP for users who prefer it
           ditto -c -k --keepParent "OpenUSB.app" \
             "openusb_v${VERSION}_macos_${{ matrix.arch }}.zip"
-          # Also package server binaries separately
+
+          # Server-only binaries
           mkdir -p server-staging
           cp "target/${{ matrix.target }}/release/openusbd" server-staging/ 2>/dev/null || true
           cp "target/${{ matrix.target }}/release/openusb" server-staging/ 2>/dev/null || true
@@ -116,6 +120,7 @@ jobs:
         with:
           name: macos-${{ matrix.arch }}
           path: |
+            openusb_v*_macos_${{ matrix.arch }}.dmg
             openusb_v*_macos_${{ matrix.arch }}.zip
             openusb_v*_macos_${{ matrix.arch }}_server.tar.gz
 
@@ -272,6 +277,7 @@ jobs:
           name: "OpenUSB ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
+            artifacts/macos-*/*.dmg
             artifacts/macos-*/*.zip
             artifacts/macos-*/*.tar.gz
             artifacts/windows-build/*.zip
