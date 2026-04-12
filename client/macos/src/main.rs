@@ -18,14 +18,15 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    tracing_subscriber::fmt()
-        .with_env_filter(&args.log_level)
-        .init();
-
     let config = ClientConfig::load();
-    info!("OpenUSB macOS client starting");
 
     if args.headless {
+        // Headless mode needs its own tracing init
+        tracing_subscriber::fmt()
+            .with_env_filter(&args.log_level)
+            .init();
+        info!("OpenUSB macOS client starting (headless)");
+
         // Headless mode: run tokio runtime directly
         let rt = tokio::runtime::Runtime::new()?;
         rt.block_on(async { run_headless(config).await })
