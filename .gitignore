@@ -41,3 +41,6 @@ openusb.toml
 *.pkg
 *.dmg
 *.AppImage
+*.db-shm
+*.db-wal
+.claude/
