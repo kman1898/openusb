@@ -319,19 +319,23 @@ fn create_default_icon() -> Icon {
     Icon::from_rgba(rgba, size, size).expect("Failed to create icon")
 }
 
-/// Set up logging to a file in the user's config directory.
+/// Set up logging to a `logs/` folder next to the executable.
 fn setup_file_logging() {
-    let log_dir = if let Some(home) = std::env::var_os("HOME") {
-        std::path::PathBuf::from(home)
-            .join("Library")
-            .join("Logs")
-            .join("OpenUSB")
-    } else if let Some(appdata) = std::env::var_os("APPDATA") {
-        std::path::PathBuf::from(appdata)
-            .join("OpenUSB")
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
+
+    // On macOS .app bundles, the exe is inside Contents/MacOS/ — put logs next to the .app
+    let log_dir = if exe_dir.ends_with("Contents/MacOS") {
+        exe_dir
+            .parent() // Contents
+            .and_then(|p| p.parent()) // .app
+            .and_then(|p| p.parent()) // folder containing .app
+            .unwrap_or(&exe_dir)
             .join("logs")
     } else {
-        std::path::PathBuf::from("/tmp/openusb")
+        exe_dir.join("logs")
     };
 
     let _ = std::fs::create_dir_all(&log_dir);
