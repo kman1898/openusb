@@ -149,9 +149,25 @@ fn run_event_loop(
 ) {
     #[cfg(target_os = "macos")]
     {
-        // macOS requires running on the main thread with a proper run loop.
-        // We use a timer-based approach to poll for events while the run loop runs.
+        // macOS requires the main thread to run a Cocoa event loop for the
+        // tray icon to render. We use NSApplication's run loop.
         use std::ffi::c_void;
+
+        #[link(name = "AppKit", kind = "framework")]
+        unsafe extern "C" {}
+
+        unsafe extern "C" {
+            fn NSApplicationLoad() -> bool;
+        }
+
+        #[repr(C)]
+        struct CFRunLoopTimerContext {
+            version: isize,
+            info: *mut c_void,
+            retain: *const c_void,
+            release: *const c_void,
+            copy_description: *const c_void,
+        }
 
         unsafe extern "C" {
             fn CFRunLoopGetCurrent() -> *mut c_void;
@@ -161,19 +177,15 @@ fn run_event_loop(
                 fire_date: f64,
                 interval: f64,
                 flags: u64,
-                order: i64,
-                callback: extern "C" fn(*mut c_void, *mut c_void),
-                context: *mut c_void,
+                order: isize,
+                callback: unsafe extern "C" fn(timer: *mut c_void, info: *mut c_void),
+                context: *const CFRunLoopTimerContext,
             ) -> *mut c_void;
             fn CFRunLoopAddTimer(rl: *mut c_void, timer: *mut c_void, mode: *mut c_void);
             fn CFAbsoluteTimeGetCurrent() -> f64;
-        }
-
-        unsafe extern "C" {
             static kCFRunLoopDefaultMode: *mut c_void;
         }
 
-        // Store state in a Box that we leak for the callback
         struct CallbackState {
             open_id: muda::MenuId,
             quit_id: muda::MenuId,
@@ -193,10 +205,10 @@ fn run_event_loop(
             last_count: 0,
             was_ready: false,
         });
-        let state_ptr = Box::into_raw(state) as *mut c_void;
+        let state_ptr = Box::into_raw(state);
 
-        extern "C" fn timer_callback(_timer: *mut c_void, info: *mut c_void) {
-            let state = unsafe { &mut *(info as *mut CallbackState) };
+        unsafe extern "C" fn timer_callback(_timer: *mut c_void, info: *mut c_void) {
+            let state = &mut *(info as *mut CallbackState);
             let menu_channel = MenuEvent::receiver();
 
             while let Ok(event) = menu_channel.try_recv() {
@@ -209,7 +221,6 @@ fn run_event_loop(
                 }
             }
 
-            // Update status
             let ready = API_READY.load(Ordering::Relaxed);
             if ready && !state.was_ready {
                 state.status_item.set_text("Running");
@@ -233,16 +244,26 @@ fn run_event_loop(
         }
 
         unsafe {
+            NSApplicationLoad();
+
+            let context = CFRunLoopTimerContext {
+                version: 0,
+                info: state_ptr as *mut c_void,
+                retain: std::ptr::null(),
+                release: std::ptr::null(),
+                copy_description: std::ptr::null(),
+            };
+
             let rl = CFRunLoopGetCurrent();
             let now = CFAbsoluteTimeGetCurrent();
             let timer = CFRunLoopTimerCreate(
                 std::ptr::null_mut(),
                 now,
-                0.5, // check every 500ms
+                0.5,
                 0,
                 0,
                 timer_callback,
-                state_ptr,
+                &context,
             );
             CFRunLoopAddTimer(rl, timer, kCFRunLoopDefaultMode);
             tracing::info!("Starting CFRunLoop");

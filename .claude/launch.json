@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm use 22 && npm run dev"],
+      "port": 5173,
+      "cwd": "web-dashboard"
+    }
+  ]
+}

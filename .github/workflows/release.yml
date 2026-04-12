@@ -76,6 +76,18 @@ jobs:
             --entitlements /dev/null \
             "OpenUSB.app"
 
+      - name: Ad-hoc codesign bundle (when no Developer ID)
+        if: env.MACOS_CERTIFICATE == ''
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        run: |
+          # Strip linker signature from binary first, then sign the full bundle
+          codesign --remove-signature "OpenUSB.app/Contents/MacOS/openusb-client" || true
+          # Sign the bundle with ad-hoc identity, binding Info.plist and sealing resources
+          /usr/bin/codesign --force --deep --sign - --identifier "dev.openusb.client" "OpenUSB.app"
+          echo "Codesign verification:"
+          codesign -dvvv "OpenUSB.app" 2>&1 | grep -E "Identifier|Info.plist|Sealed|Signature|flags"
+
       - name: Notarize app
         if: env.MACOS_NOTARIZE_APPLE_ID != ''
         env:
