@@ -292,31 +292,61 @@ fn run_event_loop(
     }
 }
 
-/// Create a simple 16x16 RGBA icon (green circle on transparent background).
+/// Load the OpenUSB logo embedded at compile time.
+/// Falls back to a simple green circle if decoding fails.
 fn create_default_icon() -> Icon {
+    // Embed the 32x32 PNG at compile time
+    static ICON_PNG: &[u8] = include_bytes!("../../../assets/icon-32.png");
+
+    if let Ok(icon) = decode_png_icon(ICON_PNG) {
+        return icon;
+    }
+
+    // Fallback: simple 16x16 green circle
     let size = 16u32;
     let mut rgba = vec![0u8; (size * size * 4) as usize];
-
     let center = size as f32 / 2.0;
     let radius = 6.0f32;
-
     for y in 0..size {
         for x in 0..size {
             let dx = x as f32 - center;
             let dy = y as f32 - center;
             let dist = (dx * dx + dy * dy).sqrt();
             let idx = ((y * size + x) * 4) as usize;
-
             if dist <= radius {
-                rgba[idx] = 0x22; // R
-                rgba[idx + 1] = 0xc5; // G
-                rgba[idx + 2] = 0x5e; // B
-                rgba[idx + 3] = 0xFF; // A
+                rgba[idx] = 0x22;
+                rgba[idx + 1] = 0xc5;
+                rgba[idx + 2] = 0x5e;
+                rgba[idx + 3] = 0xFF;
             }
         }
     }
+    Icon::from_rgba(rgba, size, size).expect("Failed to create fallback icon")
+}
 
-    Icon::from_rgba(rgba, size, size).expect("Failed to create icon")
+/// Decode a PNG file into an RGBA Icon.
+fn decode_png_icon(png_data: &[u8]) -> Result<Icon, Box<dyn std::error::Error>> {
+    let decoder = png::Decoder::new(std::io::Cursor::new(png_data));
+    let mut reader = decoder.read_info()?;
+    let mut buf = vec![0u8; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf)?;
+    let rgba = &buf[..info.buffer_size()];
+
+    // Convert to RGBA if needed (PNG might be RGB without alpha)
+    let rgba_data = if info.color_type == png::ColorType::Rgba {
+        rgba.to_vec()
+    } else if info.color_type == png::ColorType::Rgb {
+        let mut out = Vec::with_capacity(info.width as usize * info.height as usize * 4);
+        for chunk in rgba.chunks(3) {
+            out.extend_from_slice(chunk);
+            out.push(0xFF);
+        }
+        out
+    } else {
+        return Err("Unsupported PNG color type".into());
+    };
+
+    Ok(Icon::from_rgba(rgba_data, info.width, info.height)?)
 }
 
 /// Set up logging to a `logs/` folder next to the executable.
@@ -324,7 +354,9 @@ fn setup_file_logging() {
     let exe_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
+        .unwrap_or_else(|| {
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+        });
 
     // On macOS .app bundles, the exe is inside Contents/MacOS/ — put logs next to the .app
     let log_dir = if exe_dir.ends_with("Contents/MacOS") {
