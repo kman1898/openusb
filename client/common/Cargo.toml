@@ -7,7 +7,7 @@ license.workspace = true
 
 [features]
 default = []
-tray = ["dep:tray-icon", "dep:muda", "dep:open", "dep:png"]
+tray = ["dep:tray-icon", "dep:muda", "dep:tao", "dep:open", "dep:png"]
 
 [dependencies]
 openusb-shared = { workspace = true }
@@ -27,5 +27,6 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 tray-icon = { workspace = true, optional = true }
 muda = { workspace = true, optional = true }
+tao = { workspace = true, optional = true }
 open = { version = "5", optional = true }
 png = { version = "0.17", optional = true }
