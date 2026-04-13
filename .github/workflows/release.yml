@@ -230,10 +230,30 @@ jobs:
           path: openusb_v*_linux_x86_64.tar.gz
 
   # ──────────────────────────────────────────────
-  # Linux ARM Builds (Raspberry Pi, server only)
+  # Build Web Dashboard
+  # ──────────────────────────────────────────────
+  build-dashboard:
+    name: Build Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: web-dashboard/package-lock.json
+      - run: cd web-dashboard && npm ci && npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-dist
+          path: web-dashboard/dist/
+
+  # ──────────────────────────────────────────────
+  # Linux ARM Builds (Raspberry Pi, server + dashboard)
   # ──────────────────────────────────────────────
   build-linux-arm:
     name: Build Linux ${{ matrix.name }}
+    needs: [build-dashboard]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -254,15 +274,21 @@ jobs:
         run: cargo install cross --locked
       - name: Build
         run: cross build --release --target ${{ matrix.target }} -p openusbd -p openusb-cli
+      - name: Download dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-dist
+          path: dashboard-dist/
       - name: Package
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION="${{ github.event.inputs.version }}"
           fi
-          mkdir -p staging
+          mkdir -p staging/web
           cp "target/${{ matrix.target }}/release/openusbd" staging/
           cp "target/${{ matrix.target }}/release/openusb" staging/
+          cp -r dashboard-dist/* staging/web/
           tar czf "openusb_v${VERSION}_linux_${{ matrix.name }}.tar.gz" -C staging .
       - uses: actions/upload-artifact@v4
         with:
@@ -274,7 +300,7 @@ jobs:
   # ──────────────────────────────────────────────
   release:
     name: Create Release
-    needs: [build-macos, build-windows, build-linux, build-linux-arm]
+    needs: [build-macos, build-windows, build-linux, build-linux-arm, build-dashboard]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

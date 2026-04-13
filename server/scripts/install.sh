@@ -81,13 +81,26 @@ fi
 
 echo "Installing OpenUSB $LATEST..."
 
-# Download and extract server + CLI binaries
-# Release filenames use versioned format: openusb_v0.1.3_linux_arm64.tar.gz
+# Download and extract server + CLI + dashboard
 VERSION="${LATEST#v}"
 ARCHIVE_URL="https://github.com/$REPO/releases/download/$LATEST/openusb_v${VERSION}_${RELEASE_ARCH}.tar.gz"
 echo "Downloading $ARCHIVE_URL ..."
-curl -fsSL "$ARCHIVE_URL" | tar xz -C "$INSTALL_DIR"
+
+TEMP_DIR=$(mktemp -d)
+curl -fsSL "$ARCHIVE_URL" | tar xz -C "$TEMP_DIR"
+
+# Install binaries
+cp "$TEMP_DIR/openusbd" "$INSTALL_DIR/" 2>/dev/null || true
+cp "$TEMP_DIR/openusb" "$INSTALL_DIR/" 2>/dev/null || true
 chmod +x "$INSTALL_DIR/openusbd" "$INSTALL_DIR/openusb" 2>/dev/null || true
+
+# Install web dashboard if included in archive
+if [ -d "$TEMP_DIR/web" ]; then
+    echo "Installing web dashboard..."
+    cp -r "$TEMP_DIR/web/"* "$WEB_DIR/"
+fi
+
+rm -rf "$TEMP_DIR"
 
 # Install default config if not present
 if [ ! -f "$CONFIG_DIR/openusb.toml" ]; then
@@ -98,13 +111,28 @@ if [ ! -f "$CONFIG_DIR/openusb.toml" ]; then
         -o "$CONFIG_DIR/openusb.toml"
 fi
 
-# Install systemd service
-echo "Installing systemd service..."
-curl -fsSL "https://raw.githubusercontent.com/$REPO/main/server/systemd/openusbd.service" \
-    -o /etc/systemd/system/openusbd.service
-systemctl daemon-reload
-systemctl enable openusbd
-systemctl start openusbd
+# Install and start service
+if command -v systemctl &>/dev/null; then
+    echo "Installing systemd service..."
+    curl -fsSL "https://raw.githubusercontent.com/$REPO/main/server/systemd/openusbd.service" \
+        -o /etc/systemd/system/openusbd.service
+    systemctl daemon-reload
+    systemctl enable openusbd
+    systemctl restart openusbd
+    echo "Service started via systemd."
+else
+    echo "systemd not found. Starting server directly..."
+    # Kill any existing instance
+    pkill -f openusbd 2>/dev/null || true
+    sleep 1
+    # Start in background
+    nohup "$INSTALL_DIR/openusbd" --config "$CONFIG_DIR/openusb.toml" \
+        > "$LOG_DIR/openusb.log" 2>&1 &
+    echo "Server started (PID: $!)."
+    echo ""
+    echo "  To auto-start on boot, add to /etc/rc.local:"
+    echo "  $INSTALL_DIR/openusbd --config $CONFIG_DIR/openusb.toml &"
+fi
 
 # Get the IP address for the dashboard URL
 IP_ADDR=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
@@ -116,12 +144,9 @@ echo "==================================="
 echo
 echo "  Dashboard: http://${IP_ADDR}:8443"
 echo "  Config:    $CONFIG_DIR/openusb.toml"
-echo "  Logs:      journalctl -u openusbd -f"
-echo "  Status:    systemctl status openusbd"
+echo "  Logs:      $LOG_DIR/openusb.log"
+echo "  Status:    ps aux | grep openusbd"
 echo
 echo "  Default login: admin / admin"
 echo "  CHANGE THE DEFAULT PASSWORD IMMEDIATELY!"
-echo
-echo "  To share devices from another machine, install the client:"
-echo "  See https://github.com/$REPO for client downloads."
 echo
