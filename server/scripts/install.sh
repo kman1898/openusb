@@ -25,9 +25,9 @@ fi
 # Detect architecture
 ARCH=$(uname -m)
 case "$ARCH" in
-    aarch64|arm64) RELEASE_ARCH="linux-arm64" ;;
-    x86_64|amd64)  RELEASE_ARCH="linux-x86_64" ;;
-    armv7l)        RELEASE_ARCH="linux-armv7" ;;
+    aarch64|arm64) RELEASE_ARCH="linux_arm64" ;;
+    x86_64|amd64)  RELEASE_ARCH="linux_x86_64" ;;
+    armv7l)        RELEASE_ARCH="linux_armv7" ;;
     *)
         echo "Error: Unsupported architecture: $ARCH"
         exit 1
