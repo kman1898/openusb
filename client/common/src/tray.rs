@@ -24,6 +24,7 @@ pub fn run_with_tray(config: ClientConfig, dashboard_url: Option<String>) -> any
     let url = dashboard_url.unwrap_or_else(|| "http://localhost:8443".to_string());
 
     // Build tao event loop
+    #[allow(unused_mut)]
     let mut event_loop = EventLoopBuilder::new().build();
 
     // On macOS, set Accessory activation policy to hide dock icon
