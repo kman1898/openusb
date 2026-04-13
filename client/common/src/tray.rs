@@ -208,7 +208,7 @@ fn run_event_loop(
         let state_ptr = Box::into_raw(state);
 
         unsafe extern "C" fn timer_callback(_timer: *mut c_void, info: *mut c_void) {
-            let state = &mut *(info as *mut CallbackState);
+            let state = unsafe { &mut *(info as *mut CallbackState) };
             let menu_channel = MenuEvent::receiver();
 
             while let Ok(event) = menu_channel.try_recv() {
