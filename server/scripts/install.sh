@@ -82,15 +82,12 @@ fi
 echo "Installing OpenUSB $LATEST..."
 
 # Download and extract server + CLI binaries
-ARCHIVE_URL="https://github.com/$REPO/releases/download/$LATEST/openusb-${RELEASE_ARCH}.tar.gz"
+# Release filenames use versioned format: openusb_v0.1.3_linux_arm64.tar.gz
+VERSION="${LATEST#v}"
+ARCHIVE_URL="https://github.com/$REPO/releases/download/$LATEST/openusb_v${VERSION}_${RELEASE_ARCH}.tar.gz"
 echo "Downloading $ARCHIVE_URL ..."
 curl -fsSL "$ARCHIVE_URL" | tar xz -C "$INSTALL_DIR"
 chmod +x "$INSTALL_DIR/openusbd" "$INSTALL_DIR/openusb" 2>/dev/null || true
-
-# Download and extract web dashboard
-DASHBOARD_URL="https://github.com/$REPO/releases/download/$LATEST/openusb-web-dashboard.tar.gz"
-echo "Downloading web dashboard..."
-curl -fsSL "$DASHBOARD_URL" | tar xz -C "$WEB_DIR" 2>/dev/null || echo "Warning: Web dashboard not found in release"
 
 # Install default config if not present
 if [ ! -f "$CONFIG_DIR/openusb.toml" ]; then
