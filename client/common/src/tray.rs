@@ -24,7 +24,14 @@ pub fn run_with_tray(config: ClientConfig, dashboard_url: Option<String>) -> any
     let url = dashboard_url.unwrap_or_else(|| "http://localhost:8443".to_string());
 
     // Build tao event loop
-    let event_loop = EventLoopBuilder::new().build();
+    let mut event_loop = EventLoopBuilder::new().build();
+
+    // On macOS, set Accessory activation policy to hide dock icon
+    #[cfg(target_os = "macos")]
+    {
+        use tao::platform::macos::{ActivationPolicy, EventLoopExtMacOS};
+        event_loop.set_activation_policy(ActivationPolicy::Accessory);
+    }
 
     // Build the tray menu
     let menu = Menu::new();

@@ -22,6 +22,7 @@ jobs:
   # ──────────────────────────────────────────────
   build-macos:
     name: Build macOS (${{ matrix.arch }})
+    needs: [build-dashboard]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -40,6 +41,12 @@ jobs:
           key: ${{ matrix.target }}
       - name: Build
         run: cargo build --release --target ${{ matrix.target }} -p openusbd -p openusb-cli -p openusb-client-macos
+
+      - name: Download dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-dist
+          path: dashboard-dist/
 
       - name: Create app bundle
         run: |
@@ -129,10 +136,11 @@ jobs:
           ditto -c -k --keepParent "OpenUSB.app" \
             "openusb_v${VERSION}_macos_${{ matrix.arch }}.zip"
 
-          # Server-only binaries
-          mkdir -p server-staging
+          # Server binaries + dashboard
+          mkdir -p server-staging/web
           cp "target/${{ matrix.target }}/release/openusbd" server-staging/ 2>/dev/null || true
           cp "target/${{ matrix.target }}/release/openusb" server-staging/ 2>/dev/null || true
+          cp -r dashboard-dist/* server-staging/web/ 2>/dev/null || true
           tar czf "openusb_v${VERSION}_macos_${{ matrix.arch }}_server.tar.gz" -C server-staging .
 
       - uses: actions/upload-artifact@v4
@@ -202,6 +210,7 @@ jobs:
   # ──────────────────────────────────────────────
   build-linux:
     name: Build Linux x86_64
+    needs: [build-dashboard]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -211,18 +220,24 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build --release -p openusbd -p openusb-cli -p openusb-client-linux
+      - name: Download dashboard
+        uses: actions/download-artifact@v4
+        with:
+          name: dashboard-dist
+          path: dashboard-dist/
       - name: Package
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION="${{ github.event.inputs.version }}"
           fi
-          mkdir -p staging
+          mkdir -p staging/web
           cp target/release/openusbd staging/
           cp target/release/openusb staging/
           cp target/release/openusb-client staging/
           cp client/linux/openusb-client.desktop staging/
           cp assets/icon-256.png staging/openusb.png 2>/dev/null || true
+          cp -r dashboard-dist/* staging/web/
           tar czf "openusb_v${VERSION}_linux_x86_64.tar.gz" -C staging .
       - uses: actions/upload-artifact@v4
         with:
