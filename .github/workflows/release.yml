@@ -85,8 +85,12 @@ jobs:
           codesign --remove-signature "OpenUSB.app/Contents/MacOS/openusb-client" || true
           # Sign the bundle with ad-hoc identity, binding Info.plist and sealing resources
           /usr/bin/codesign --force --deep --sign - --identifier "dev.openusb.client" "OpenUSB.app"
+          # Ensure execute bit is set after signing
+          chmod +x "OpenUSB.app/Contents/MacOS/openusb-client"
           echo "Codesign verification:"
           codesign -dvvv "OpenUSB.app" 2>&1 | grep -E "Identifier|Info.plist|Sealed|Signature|flags"
+          echo "Permissions:"
+          ls -la "OpenUSB.app/Contents/MacOS/openusb-client"
 
       - name: Notarize app
         if: env.MACOS_NOTARIZE_APPLE_ID != ''
@@ -105,6 +109,9 @@ jobs:
 
       - name: Create DMG and ZIP
         run: |
+          # Ensure binary is executable (artifact upload can strip permissions)
+          chmod +x "OpenUSB.app/Contents/MacOS/openusb-client"
+
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION="${{ github.event.inputs.version }}"
