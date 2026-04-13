@@ -6,12 +6,16 @@ interface Props {
 
 export function ClientBanner({ client }: Props) {
   if (client.installed) {
+    const isMac = client.os === "macos";
+
     const driverText = client.driver_status
       ? client.driver_status.status === "installed"
         ? `Driver: ${client.driver_status.version}`
-        : client.driver_status.status === "not_installed"
-          ? "Driver: missing"
-          : "Driver: error"
+        : isMac
+          ? "Management mode"
+          : client.driver_status.status === "not_installed"
+            ? "Driver: missing"
+            : "Driver: error"
       : null;
 
     return (
@@ -50,8 +54,7 @@ export function ClientBanner({ client }: Props) {
     >
       <strong style={{ color: "#fbbf24" }}>No local client detected.</strong>{" "}
       <span style={{ color: "#fde68a" }}>
-        Install the OpenUSB client to attach devices to this machine.
-        Attach/detach controls require the client running on localhost:9245.
+        Install the OpenUSB client to manage devices from this machine.
       </span>
     </div>
   );

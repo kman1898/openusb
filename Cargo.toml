@@ -7,7 +7,6 @@ members = [
     "cli",
     "client/windows",
     "client/linux",
-    "client/macos",
     # "relay",            # Phase 5
 ]
 

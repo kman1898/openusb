@@ -2,11 +2,15 @@ import type { DriverStatus as DriverStatusType } from "../types";
 
 interface Props {
   driver?: DriverStatusType;
+  os?: string;
 }
 
-export function DriverStatus({ driver }: Props) {
+export function DriverStatus({ driver, os }: Props) {
   if (!driver) return null;
   if (driver.status === "installed") return null;
+
+  // macOS doesn't support USB/IP device attachment — only management
+  if (os === "macos") return null;
 
   return (
     <div
@@ -25,9 +29,13 @@ export function DriverStatus({ driver }: Props) {
           : `Driver error: ${driver.message}`}
       </strong>
       <div style={{ color: "#fca5a5", marginTop: 2 }}>
-        The USB/IP driver is required to attach remote USB devices.
-        Install with: <code style={{ color: "#f87171" }}>sudo apt install linux-tools-generic</code> (Ubuntu/Debian)
-        or <code style={{ color: "#f87171" }}>sudo dnf install usbip-utils</code> (Fedora/RHEL).
+        The USB/IP driver is required to attach remote USB devices to this machine.
+        {os === "windows" ? (
+          <> Install the <code style={{ color: "#f87171" }}>usbip-win2</code> driver.</>
+        ) : (
+          <> Install with: <code style={{ color: "#f87171" }}>sudo apt install linux-tools-generic</code> (Ubuntu/Debian)
+          or <code style={{ color: "#f87171" }}>sudo dnf install usbip-utils</code> (Fedora/RHEL).</>
+        )}
       </div>
     </div>
   );

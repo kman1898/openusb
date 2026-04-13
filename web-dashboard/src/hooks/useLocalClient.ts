@@ -14,6 +14,7 @@ export function useLocalClient() {
         installed: true,
         version: data.version,
         driver_status: data.driver_status,
+        os: data.os,
       });
     } catch {
       setClient({ installed: false });

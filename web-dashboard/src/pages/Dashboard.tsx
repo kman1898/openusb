@@ -127,7 +127,7 @@ export function Dashboard() {
       </div>
 
       {client.installed && client.driver_status && client.driver_status.status !== "installed" && (
-        <DriverStatus driver={client.driver_status} />
+        <DriverStatus driver={client.driver_status} os={client.os} />
       )}
 
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>

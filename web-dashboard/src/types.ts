@@ -49,6 +49,7 @@ export interface ClientStatus {
   installed: boolean;
   version?: string;
   driver_status?: DriverStatus;
+  os?: string;
 }
 
 export type DriverStatus =
